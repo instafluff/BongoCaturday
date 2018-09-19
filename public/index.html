@@ -1,0 +1,67 @@
+<head>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script>
+    "use strict";
+    window.onload = function () {
+      $("#bongo-impact").hide();
+      $("#bongo-down").hide();
+      $("#bongo-up").show();
+      // request frame
+      var drawVisual;
+      var audioElement = document.getElementById("audioSource");
+      // make sure AudioContext will work fine in different browsers
+      var AudioContext = window.AudioContext || window.webkitAudioContext;
+      var audioCtx = new AudioContext();
+      // copy audio source data to manipulate later
+      var source = audioCtx.createMediaElementSource(audioElement);
+      // create audio analyser
+      var analyser = audioCtx.createAnalyser();
+      // set audio analyser
+      analyser.fftSize = 2048;
+      var bufferLength = analyser.frequencyBinCount;
+      var dataArray = new Uint8Array(bufferLength);
+      // Bind our analyser to the media element source.
+      source.connect(analyser);
+      source.connect(audioCtx.destination);
+      // extract data
+      var previousAvg = 0;
+      setInterval( function() {
+        analyser.getByteTimeDomainData(dataArray);
+        // analyser.getByteFrequencyData(dataArray);
+        // console.log(dataArray);
+        var sum = 0, avg = 0;
+        var loRange = 0, hiRange = 100;
+        var length = hiRange - loRange;
+        for( var i = 0, len = dataArray.length; i < len; i++ ) {
+          if( i >= loRange && i < hiRange ) {
+            sum += dataArray[ i - loRange ];
+          }
+        }
+        avg = sum / length;
+        if( avg > previousAvg + 0.5 ) {
+          $("#bongo-impact").show();
+          $("#bongo-down").show();
+          $("#bongo-up").hide();
+          setTimeout( function() {
+            $("#bongo-impact").hide();
+            $("#bongo-down").hide();
+            $("#bongo-up").show();
+          }, 100 );
+        }
+        console.log(avg);
+        previousAvg = avg;
+      }, 100 );
+    };
+  </script>
+</head>
+<body>
+  <div style="position: relative; z-index: -50;">
+    <img style="position: absolute; left: 0; top: -100px;" src="images/bongoInstrument.png">
+    <img id="bongo-impact" style="position: absolute; left: 0; top: -100px;" src="images/bongoImpact.png">
+    <img id="bongo-up" style="position: absolute; left: 0; top: -100px;" src="images/bongoPawUp.png">
+    <img id="bongo-down" style="position: absolute; left: 0; top: -100px;" src="images/bongoPawDown.png">
+  </div>
+  <audio id="audioSource" src="Bongo_Madness.mp3" type="audio/mpeg" controls>
+    Your browser does not support the audio element.
+  </audio>
+</body>
